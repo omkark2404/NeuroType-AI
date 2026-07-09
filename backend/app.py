@@ -12,8 +12,6 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 import os
 
 from config import settings
@@ -97,34 +95,24 @@ def create_app() -> FastAPI:
     application.include_router(typing_router, prefix="/typing")
     application.include_router(ai_router,     prefix="/ai")
 
-    # ── Static Files (Frontend) ───────────────────────────────────────────────
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
-    if os.path.isdir(static_dir):
-        application.mount("/static", StaticFiles(directory=static_dir), name="static")
-
     return application
 
 
 app = create_app()
 
 
-# ── Root — Serve Frontend UI ──────────────────────────────────────────────────
+# ── Root — Health Check ───────────────────────────────────────────────────────
 
-@app.get("/", tags=["Health"], summary="NeuroType AI frontend or health check")
+@app.get("/", tags=["Health"], summary="API health check")
 def root():
     """
-    Serves the interactive NeuroType AI web frontend if static/index.html exists.
-    Falls back to a JSON health-check response (useful for API-only deployments).
+    JSON health-check response.
     """
-    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.isfile(index_path):
-        return FileResponse(index_path, media_type="text/html")
     return {
         "service": "NeuroType AI — Cognitive Typing Intelligence Engine",
         "version": "1.1.0",
         "status":  "operational",
         "docs":    "/docs",
-        "frontend": "not available — static/index.html not found",
     }
 
 

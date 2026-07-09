@@ -59,6 +59,23 @@ Client (keystroke stream)
 
 ---
 
+##Run the tests against a live server:
+```bash
+cd backend
+python test_api.py
+```
+
+## 🏗️ Architecture
+
+- **`backend/app.py`**: FastAPI entrypoint and API routes
+- **`backend/services/ml_model.py`**: The core sigmoid brain model and gradient descent learning algorithms
+- **`backend/services/feature_extractor.py`**: Translates raw keystrokes into statistical inputs
+- **`backend/models/storage.py`**: SQLite database interface configured with WAL journaling for high concurrency
+- **`frontend/`**: HTML/CSS/JS for the glassmorphic frontend UI, completely decoupled from the backend.
+- **`render.yaml` & `vercel.json`**: Cloud deployment configurations
+
+---
+
 ##  Cognitive Model Explanation
 
 The **Cognitive Typing Brain Model** (`services/ml_model.py`) uses a sigmoid activation function to map raw behavioral features to normalized cognitive predictions.
@@ -238,124 +255,39 @@ Full interactive docs available at **`/docs`** (Swagger UI) and **`/redoc`** aft
 
 ---
 
-##  Sample Test Data
+## 🚀 Getting Started
 
-### Step 1 — Register
+### Prerequisites
+- Python 3.9+
+- Pip
 
-```bash
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "secure123"}'
-```
+### Local Development
 
-### Step 2 — Submit a Session (triggers online learning)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/omkark2404/NeuroType-AI.git
+   cd NeuroType-AI
+   ```
 
-```bash
-curl -X POST http://localhost:8000/typing/session \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id":    "alice",
-    "session_id": "sess-001",
-    "keystrokes": [
-      {"user_id":"alice","session_id":"sess-001","key":"t","timestamp":1000,"is_error":false,"hold_duration":80},
-      {"user_id":"alice","session_id":"sess-001","key":"h","timestamp":1120,"is_error":false,"hold_duration":75},
-      {"user_id":"alice","session_id":"sess-001","key":"e","timestamp":1260,"is_error":true, "hold_duration":70},
-      {"user_id":"alice","session_id":"sess-001","key":"r","timestamp":1500,"is_error":false,"hold_duration":60},
-      {"user_id":"alice","session_id":"sess-001","key":"Space","timestamp":1700,"is_error":false,"hold_duration":50},
-      {"user_id":"alice","session_id":"sess-001","key":"f","timestamp":2000,"is_error":false,"hold_duration":80},
-      {"user_id":"alice","session_id":"sess-001","key":"a","timestamp":2300,"is_error":false,"hold_duration":75},
-      {"user_id":"alice","session_id":"sess-001","key":"t","timestamp":2600,"is_error":false,"hold_duration":80}
-    ]
-  }'
-# Logs will show: "WeightUpdate — residual=0.xxxx | w_var=... w_hold=... w_err=... w_fat=..."
-```
+2. Start the Backend:
+   ```bash
+   cd backend
+   python -m venv venv
+   # Windows: venv\Scripts\activate
+   # Linux/Mac: source venv/bin/activate
+   pip install -r requirements.txt
+   python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+   ```
 
-### Step 3 — Real-time Stream Predict (no session storage needed)
+3. Open the Frontend:
+   Simply open `frontend/index.html` in your web browser. (If testing locally, ensure the API URL in `index.html` is set to `http://localhost:8000` instead of the Render URL).
 
-```bash
-curl -X POST http://localhost:8000/ai/stream-predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "alice",
-    "keystrokes": [
-      {"user_id":"alice","session_id":"live","key":"t","timestamp":1000,"is_error":false,"hold_duration":80},
-      {"user_id":"alice","session_id":"live","key":"h","timestamp":1120,"is_error":true, "hold_duration":95},
-      {"user_id":"alice","session_id":"live","key":"e","timestamp":1230,"is_error":false,"hold_duration":75}
-    ]
-  }'
-```
+## ☁️ Deployment
 
-**Expected Response:**
-```json
-{
-  "fatigue":     0.38,
-  "error_prob":  0.58,
-  "consistency": 95.1,
-  "directive":   "focus_accuracy_exercises",
-  "feedback":    "Your error rate is climbing. Focus on accuracy over speed.",
-  "mode":        "realtime"
-}
-```
+This project is structured for easy cloud deployment:
 
-### Step 4 — Adapt (with weak patterns)
-
-```bash
-curl -X POST http://localhost:8000/ai/adapt \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "alice", "session_id": "sess-001"}'
-```
-
-**Expected Response:**
-```json
-{
-  "directive":     "focus_accuracy_exercises",
-  "feedback":      "Your error rate is climbing. Focus on accuracy over speed.",
-  "weak_patterns": ["he", "th"],
-  "predictions": {
-    "fatigue":     0.559,
-    "error_prob":  0.607,
-    "consistency": 93.6
-  }
-}
-```
-
-### Step 5 — Analytics with trend (after 3+ sessions)
-
-```bash
-curl "http://localhost:8000/typing/analytics?user_id=alice"
-```
-
-**Expected Response:**
-```json
-{
-  "user_id":        "alice",
-  "total_sessions": 3,
-  "avg_wpm":        67.3,
-  "avg_accuracy":   91.2,
-  "trend":          "improving",
-  "sessions":       [...]
-}
-```
-
----
-
-##  How to Run
-
-### 1. Install dependencies
-
-```bash
-cd "NeuroType AI"
-python3 -m pip install -r requirements.txt
-```
-
-### 2. Start the server
-
-```bash
-uvicorn app:app --reload
-```
-
-The engine starts at **`http://localhost:8000`**.
-Interactive API docs: **`http://localhost:8000/docs`**
+- **Frontend (Vercel)**: Connect your GitHub repo to Vercel. Vercel will automatically read `vercel.json` and serve the `frontend/` directory.
+- **Backend (Render)**: Connect your GitHub repo to Render. Render will automatically read `render.yaml` to provision and launch the FastAPI Python service.
 
 ### 3. Configuration (optional)
 

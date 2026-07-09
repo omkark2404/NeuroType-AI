@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: neurotype-ai
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DB_TYPE
+        value: sqlite
+      - key: PYTHON_VERSION
+        value: 3.11.0
